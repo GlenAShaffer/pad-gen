@@ -1,10 +1,65 @@
 use rand::{Rng, rngs::ThreadRng};
+use std::{collections::VecDeque, env};
 
 fn main() {
-    let mut output: String = "".to_owned();
-    output.push_str(_title_page().as_str());
-    output.push_str(_content(10).as_str());
-    println!("{}", output.as_str());
+    let arg_iter = env::args();
+    let mut arg_queue: VecDeque<String> = arg_iter.collect();
+    let mut g = Generator {
+        line_num: 10,
+        line_length: 10,
+        page_num: 1,
+    };
+    loop {
+        let arg_opt = arg_queue.pop_front();
+        match arg_opt {
+            Some(arg) => _parse(arg, &mut arg_queue, &mut g),
+            None => break,
+        }
+    }
+    println!("{}", g.run());
+}
+
+struct Generator {
+    line_num: usize,
+    line_length: usize,
+    page_num: usize,
+}
+
+impl Generator {
+    fn run(&self) -> String {
+        let mut output: String = "".to_owned();
+        output.push_str(_title_page().as_str());
+        output.push_str(_content(self.page_num, self.line_num, self.line_length).as_str());
+        output
+    }
+}
+
+fn _parse(arg: String, queue: &mut VecDeque<String>, g: &mut Generator) {
+    match arg.as_str() {
+        "-n" => _parse_number(queue.pop_front(), g),
+        "-l" => _parse_length(queue.pop_front(), g),
+        _ => (),
+    }
+}
+
+fn _parse_number(arg_opt: Option<String>, g: &mut Generator) {
+    match arg_opt {
+        Some(arg) => match arg.parse::<usize>() {
+            Ok(number) => g.line_num = number,
+            Err(_) => panic!("Could not parse value after\"-n\""),
+        },
+        None => panic!("No value found for number of lines. Please specify a value after \"-n\""),
+    }
+}
+
+fn _parse_length(arg_opt: Option<String>, g: &mut Generator) {
+    match arg_opt {
+        Some(arg) => match arg.parse::<usize>() {
+            Ok(length) => g.line_length = length,
+            Err(_) => panic!("Could not parse value after \"-l\""),
+        },
+        None => panic!("No value found for line length. Please specify a value after \"-l\""),
+    }
 }
 
 fn _title_page() -> String {
@@ -15,12 +70,12 @@ This pad can be used to securely communicate with the owner of an identical pad.
         .to_owned()
 }
 
-fn _content(num_pgs: usize) -> String {
+fn _content(num_pgs: usize, line_num: usize, line_length: usize) -> String {
     let mut rng = rand::rng();
     let mut output: String = "".to_owned();
     for pg_num in 1..(num_pgs + 1) {
         output.push_str(_header(pg_num, num_pgs).as_str());
-        output.push_str(_pad(10, 10, &mut rng).as_str());
+        output.push_str(_pad(line_num, line_length, &mut rng).as_str());
         output.push_str(_closer(pg_num, num_pgs).as_str());
     }
     output
@@ -30,7 +85,7 @@ fn _header(pg_num: usize, num_pgs: usize) -> String {
     format!("\nPage {} of {}\n", pg_num, num_pgs).to_owned()
 }
 
-fn _pad(l_length: usize, l_num: usize, rng: &mut ThreadRng) -> String {
+fn _pad(l_num: usize, l_length: usize, rng: &mut ThreadRng) -> String {
     let mut output = "".to_owned();
     for l in 0..l_num {
         output.push_str(format!("{}\t", l).as_str());
