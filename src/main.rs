@@ -46,7 +46,7 @@ fn _parse_number(arg_opt: Option<String>, g: &mut Generator) {
     match arg_opt {
         Some(arg) => match arg.parse::<usize>() {
             Ok(number) => g.line_num = number,
-            Err(_) => panic!("Could not parse value after\"-n\""),
+            Err(_) => panic!("Could not parse value after \"-n\""),
         },
         None => panic!("No value found for number of lines. Please specify a value after \"-n\""),
     }
